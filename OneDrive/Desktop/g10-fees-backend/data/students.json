@@ -1,0 +1,20 @@
+[
+  {
+    "StudentID": "S101",
+    "Name": "Rahul Sharma",
+    "Class": "9",
+    "MonthlyFee": 1500,
+    "Password": "2008-05-10",
+    "DOB": "2008-05-10",
+    "PaymentLink": ""
+  },
+  {
+    "StudentID": "S102",
+    "Name": "Soniya Das",
+    "Class": "10",
+    "MonthlyFee": 1800,
+    "Password": "2007-09-21",
+    "DOB": "2007-09-21",
+    "PaymentLink": ""
+  }
+]

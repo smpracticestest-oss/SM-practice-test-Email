@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>INVOICE/MONEY RECEIPT</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+    .container { max-width: 900px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: none; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .header img { max-height: 60px; }
+    .header .info { text-align: right; }
+    h2 { text-align: center; margin-bottom: 10px; }
+    .form-row { display: flex; gap: 15px; margin-bottom: 10px; }
+    .form-row input, .form-row select { flex: 1; padding: 6px; font-size: 12px; }
+    label { font-weight: bold; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { border: 1px solid #ddd; padding: 6px; text-align: center; }
+   
+   th.small-cell, td.small-cell { width: 60px; }
+    .actions { margin-top: 15px; display: flex; justify-content: space-between; }
+    .totals { margin-top: 20px; text-align: right; }
+    .totals div { margin: 5px 0; }
+    #dueBalance { font-weight: bold; }
+    #studentName { font-weight: bold; }
+    .qr { text-align: center; margin-top: 20px; }
+    .no-print { display: inline-block; }
+    input[disabled] { background: #f0f0f0; color: #666; }
+ 
+ /* Uniform style for numeric inputs */
+td .qty-input,
+td .rate-input {
+  width: 60px;   /* shrunk */
+}
+td .total-input {
+  width: 70px;          /* consistent width */
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  text-align: right;    /* right aligned */
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 12px;      /* slightly smaller font */
+  line-height: inherit;
+}
+
+/* Total column needs a bit wider cell */
+td .total-input {
+  width: 80px;
+}
+
+/* Compact delete button */
+.delete-btn {
+  background: none;
+  border: none;
+  color: #d33;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  line-height: 1;
+}
+
+@media print {
+  .no-print { display: none !important; }
+  select, input {
+    font-size: 10px;
+    padding: 0;
+    border: none;
+    appearance: none;
+    background: none;
+    color: black;
+  }
+}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="passwordScreen" style="text-align: center; margin-top: 100px;">
+      <h2>Please enter password to access the invoice</h2>
+      <input type="password" id="passwordInput" placeholder="Enter password" style="padding: 8px; font-size: 12px;">
+      <button onclick="checkPassword()" style="padding: 8px 16px; font-size: 12px;">Submit</button>
+    </div>
+
+    <div id="protectedContent" style="display:none;">
+      <div class="header">
+        <img src="https://i.ibb.co/WNZTWPwv/LOGO-PNG-2025-fab.png" alt="Logo">
+        <div class="info">
+          <div><strong>G10 EDUCATIONAL PLATFORM </strong></div>
+          <div>Jayanagar Charali, Beltola Bazar Road, Guwahati-28, Ph. No.: 9706380357</div>
+          <div>Date: <input type="date" id="invoiceDateInput" /></div>
+          <div>Invoice No: <span id="invoiceNo">-</span></div>
+        </div>
+      </div>
+
+      <h2>INVOICE/MONEY RECEIPT</h2>
+
+      <div class="form-row">
+        <select id="studentSelect" onchange="handleStudentChange()">
+          <option value="">-- STUDENT NAME --</option>
+        </select>
+        <input list="invoiceList" id="invoiceSelect" placeholder="-- Load Invoice No. --" oninput="handleInvoiceInput()" />
+        <datalist id="invoiceList"></datalist>
+      </div>
+
+      <div class="form-row">
+        <input type="text" id="studentName" placeholder="Student Name" />
+        <input type="text" id="phone" placeholder="Phone Number" />
+      </div>
+      <div class="form-row">
+        <input type="email" id="email" placeholder="Email ID" />
+        <input type="text" id="address" placeholder="Address" />
+      </div>
+      <div class="form-row">
+        <select id="studentClass">
+          <option>Class 9</option>
+          <option>Class 10</option>
+          <option>Class 11</option>
+          <option>Class 12</option>
+          <option>IIT-JEE</option>
+          <option>NEET</option>
+          <option>CUET</option>
+          <option>Class 8</option>
+        </select>
+      </div>
+
+      <table class="invoice-table" id="invoiceTable" style="display: none;">
+        <thead>
+          <tr>
+            <th colspan="2">Date</th>
+            <th rowspan="2">Service Type</th>
+            <th rowspan="2">Subject</th>
+            <th rowspan="2" class="small-cell">No's/Qnty</th>
+            <th rowspan="2" class="small-cell">Rate</th>
+            <th rowspan="2">Total</th>
+            <th rowspan="2" class="no-print">x</th>
+
+          </tr>
+          <tr><th>From</th><th>To</th></tr>
+        </thead>
+        <tbody id="billBody"></tbody>
+      </table>
+
+      <div>
+        <button onclick="addItem()" class="no-print">+ Add Coaching</button>
+        <button id="printBtn" onclick="window.print()" class="no-print" style="display:none;">🖨️ Print Invoice</button>
+        <button onclick="saveInvoice()" class="no-print">💾 Save Invoice</button>
+        <button onclick="newInvoice()" class="no-print">🆕 New Invoice</button>
+      </div>
+
+      <div class="actions">
+        <div class="date-filters no-print">
+          From: <input type="date" id="fromDate">
+          To: <input type="date" id="toDate">
+        </div>
+        <div>
+          <button onclick="exportToExcel()" class="no-print">📊 Export Excel</button>
+        </div>
+      </div>
+
+      <div class="totals">
+        <div id="grandTotal">Total Amount: ₹0.00</div>
+        <div id="amountInWords">Total (in words): Zero Rupees Only</div>
+        <div>Amount Paid: ₹<input type="number" id="amountPaid" value="0" min="0" oninput="calculateTotal()" style="width: 100px;"></div>
+        <div id="dueBalance">Due Balance: ₹0.00</div>
+      </div>
+
+      <div class="qr">
+        <p style="font-weight:bold; color:green; text-align:left;">Scan the Below QR to Pay the Fee:</p>
+        <div id="qrCanvas"></div>
+      </div>
+    </div>
+  </div> <!-- End container -->
+
+  <div class="notes" style="margin-top: 30px; font-size: 9px;">
+    <p><strong>Note:</strong></p>
+    <ol style="padding-left: 20px;">
+      <li>This is a computer-generated invoice; signature is not required.</li>
+      <li>Fee once paid is not refundable.</li>
+    </ol>
+  </div>
+
+  <!-- external libs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.min.js"></script>
+
+  <script>
+    // ---------- utilities ----------
+    const invoiceDateInput = document.getElementById("invoiceDateInput");
+    if (invoiceDateInput) invoiceDateInput.valueAsDate = new Date();
+
+    function escapeHTML(str) {
+      if (str === undefined || str === null) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function generateInvoiceNo() {
+      return "INV-" + Date.now();
+    }
+
+    // ---------- dropdowns / datalist ----------
+const API_BASE = "https://your-render-api.onrender.com"; // replace with your Render API URL
+
+// ---------- dropdowns / datalist ----------
+async function populateDropdowns() {
+  const studentSelect = document.getElementById("studentSelect");
+  const invoiceList = document.getElementById("invoiceList");
+
+  // fetch students
+  const studentsRes = await fetch(`${API_BASE}/students`);
+  const { students } = await studentsRes.json();
+
+  studentSelect.innerHTML = `<option value="">-- STUDENT NAME --</option>`;
+  Object.keys(students || {})
+    .sort((a, b) => a.localeCompare(b))
+    .forEach(name => {
+      const option = document.createElement("option");
+      option.value = name;
+      option.textContent = name;
+      studentSelect.appendChild(option);
+    });
+
+  // fetch invoices
+  const invoicesRes = await fetch(`${API_BASE}/invoices`);
+  const { invoices } = await invoicesRes.json();
+
+  invoiceList.innerHTML = "";
+  Object.keys(invoices || {})
+    .sort((a, b) => {
+      const ta = parseInt((a || "").replace("INV-", ""), 10) || 0;
+      const tb = parseInt((b || "").replace("INV-", ""), 10) || 0;
+      return tb - ta;
+    })
+    .forEach(no => {
+      const option = document.createElement("option");
+      option.value = no;
+      invoiceList.appendChild(option);
+    });
+
+  const invoiceSelect = document.getElementById("invoiceSelect");
+  if (invoiceSelect) invoiceSelect.value = "";
+}
+
+// ---------- save invoice ----------
+async function saveInvoice() {
+  const name = document.getElementById("studentName").value.trim();
+  if (!name) return alert("Enter student name.");
+
+  let invoiceNo = document.getElementById("invoiceNo").textContent;
+  if (invoiceNo === "-" || !invoiceNo) {
+    invoiceNo = generateInvoiceNo();
+    document.getElementById("invoiceNo").textContent = invoiceNo;
+  }
+
+  const rows = Array.from(document.querySelectorAll("#billBody tr")).map(row => {
+    const from = row.children[0].querySelector("input")?.value || "";
+    const to = row.children[1].querySelector("input")?.value || "";
+    const type = row.children[2].querySelector("select")?.value || "";
+    const subject = row.children[3].querySelector("select,input")?.value || "";
+    const qty = row.children[4].querySelector("input")?.value || "";
+    const rate = row.children[5].querySelector("input")?.value || "";
+    const total = row.children[6].querySelector("input")?.value || "0";
+    return { from, to, type, subject, qty, rate, total };
+  });
+
+  let grandTotal = 0;
+  rows.forEach(r => { grandTotal += parseFloat(r.total) || 0; });
+  const paid = parseFloat(document.getElementById("amountPaid").value) || 0;
+  const balance = grandTotal - paid;
+
+  const invoice = {
+    invoiceNo,
+    name,
+    phone: document.getElementById("phone").value,
+    email: document.getElementById("email").value,
+    address: document.getElementById("address").value,
+    class: document.getElementById("studentClass").value,
+    date: invoiceDateInput.value,
+    amountPaid: paid,
+    rows,
+    balance
+  };
+
+  // save invoice to backend
+  await fetch(`${API_BASE}/invoices`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(invoice)
+  });
+
+  // also save/update student info
+  const studentData = {
+    name,
+    phone: invoice.phone,
+    email: invoice.email,
+    address: invoice.address,
+    class: invoice.class
+  };
+  await fetch(`${API_BASE}/students`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(studentData)
+  });
+
+  await populateDropdowns();
+  document.getElementById("invoiceSelect").value = invoiceNo;
+  document.getElementById("printBtn").style.display = "inline-block";
+
+  alert("Invoice Saved!");
+}
+
+// ---------- load invoice ----------
+async function loadInvoiceByNumber(invoiceNoParam) {
+  const invoiceNo = invoiceNoParam || document.getElementById("invoiceSelect").value;
+  const res = await fetch(`${API_BASE}/invoices/${invoiceNo}`);
+  const invoice = await res.json();
+  if (!invoice) return;
+
+  // (keep the same UI-filling logic you already have)
+  // ...
+}
+
+
+  document.getElementById("studentName").value = invoice.name;
+  document.getElementById("phone").value = invoice.phone;
+  document.getElementById("email").value = invoice.email;
+  document.getElementById("address").value = invoice.address;
+  document.getElementById("studentClass").value = invoice.class;
+  document.getElementById("invoiceDateInput").value = invoice.date;
+  document.getElementById("amountPaid").value = invoice.amountPaid;
+  document.getElementById("invoiceNo").textContent = invoiceNo;
+  document.getElementById("invoiceTable").style.display = "table";
+
+  const billBody = document.getElementById("billBody");
+  billBody.innerHTML = "";
+
+  invoice.rows.forEach(row => {
+    const tr = document.createElement("tr");
+
+    // default row layout
+    tr.innerHTML = `
+      <td><input type="date" value="${escapeHTML(row.from || '')}"></td>
+      <td><input type="date" value="${escapeHTML(row.to || '')}"></td>
+      <td>
+        <select onchange="handleServiceTypeChange(this)">
+          <option>Individual Coaching</option>
+          <option>Home Tuition</option>
+          <option>Group Coaching</option>
+          <option>Dual Coaching</option>
+          <option>Super Group Coaching</option>
+          <option>Demo Class Reg. Fee</option>
+          <option>Admission Fee</option>
+          <option>Study Material</option>
+          <option>Prev. balance</option>
+          <option>Fee Concession</option>
+        </select>
+      </td>
+      <td>
+        <select>
+          <option>Physics</option>
+          <option>Chemistry</option>
+          <option>Math</option>
+          <option>Biology</option>
+          <option>Science</option>
+          <option>NA</option>
+          <option>Qlfd. Scholarship</option>
+        </select>
+      </td>
+      <td><input type="text" value="${escapeHTML(row.qty || '')}" style="width:60px;" oninput="calculateTotal()"></td>
+      <td><input type="number" value="${escapeHTML(row.rate || 0)}" min="0" class="rate" style="width:60px;" oninput="calculateTotal()"></td>
+      <td><input type="number" step="0.01" value="${escapeHTML(row.total || 0)}" class="total-input" style="text-align:center;" oninput="calculateTotal()"></td>
+<td class="no-print"><button class="delete-btn" onclick="this.closest('tr').remove();calculateTotal()">×</button></td>
+    `;
+// force the delete button text to ×
+const delBtn = tr.querySelector(".delete-btn");
+if (delBtn) delBtn.textContent = "×";
+
+    billBody.appendChild(tr);
+
+    // set service type
+    const serviceSel = tr.children[2].querySelector("select");
+    serviceSel.value = row.type || serviceSel.options[0].text;
+
+ if (row.type === "Prev. balance") {
+  // Qty = NA, Rate = NA
+  tr.children[4].innerHTML = `<input type="text" value="NA" disabled style="width:60px;">`;
+  tr.children[5].innerHTML = `<input type="text" value="NA" disabled style="width:60px;">`;
+
+  // Subject as input
+  tr.children[3].innerHTML = `<input type="text" value="${escapeHTML(row.subject || '')}" style="width:120px;">`;
+
+  // Total as input
+  tr.children[6].innerHTML = `<input type="number" step="0.01" value="${escapeHTML(row.total || 0)}" class="total-input" style="text-align:center;" oninput="calculateTotal()">`;
+} else {
+
+      // restore subject as dropdown
+      const subjSel = tr.children[3].querySelector("select");
+      subjSel.value = row.subject || subjSel.options[0].text;
+
+      // re-apply service-type transformation
+      handleServiceTypeChange(serviceSel);
+
+      // restore qty/rate/total into possibly transformed inputs
+      const qtyInput = tr.children[4].querySelector("input");
+      const rateInput = tr.children[5].querySelector("input");
+      const totalInput = tr.children[6].querySelector("input");
+      if (qtyInput && !qtyInput.disabled) qtyInput.value = row.qty || qtyInput.value || "";
+      if (rateInput && !rateInput.disabled) rateInput.value = row.rate || rateInput.value || 0;
+      if (totalInput) totalInput.value = row.total || totalInput.value || 0;
+    }
+  });
+
+  calculateTotal();
+  document.getElementById("printBtn").style.display = "inline-block";
+}
+
+    // ---------- add / edit rows ----------
+    function addItem() {
+      document.getElementById("invoiceTable").style.display = "table";
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td><input type="date"></td>
+        <td><input type="date"></td>
+        <td>
+          <select onchange="handleServiceTypeChange(this)">
+            <option>Individual Coaching</option>
+            <option>Home Tuition</option>
+            <option>Group Coaching</option>
+            <option>Dual Coaching</option>
+            <option>Super Group Coaching</option>
+            <option>Demo Class Reg. Fee</option>
+            <option>Admission Fee</option>
+            <option>Study Material</option>
+            <option>Prev. balance</option>
+            <option>Fee Concession</option>
+          </select>
+        </td>
+        <td>
+          <select>
+            <option>Physics</option>
+            <option>Chemistry</option>
+            <option>Math</option>
+            <option>Biology</option>
+            <option>Science</option>
+            <option>NA</option>
+            <option>Qlfd. Scholarship</option>
+          </select>
+        </td>
+        <td><input type="text" value="8 Class" style="width: 60px;" oninput="calculateTotal()"></td>
+        <td><input type="number" value="1000" min="0" class="rate" style="width: 60px;" oninput="calculateTotal()"></td>
+        <td class="item-total">1000.00</td>
+        <td class="no-print"><button class="delete-btn" onclick="this.closest('tr').remove();calculateTotal()">×</button></td>
+
+      `;
+      document.getElementById("billBody").appendChild(row);
+      calculateTotal();
+    }
+
+function handleServiceTypeChange(selectEl) {
+  const row = selectEl.closest("tr");
+  const qtyCell = row.children[4];
+  const rateCell = row.children[5];
+  const totalCell = row.children[6];
+  const fromInput = row.children[0].querySelector("input");
+  const toInput = row.children[1].querySelector("input");
+  const subjectCell = row.children[3]; // Subject column
+
+  const val = selectEl.value;
+
+  if (val === "Prev. balance" || val === "Fee Concession") {
+    qtyCell.innerHTML = `<input type="text" value="NA" disabled style="width:60px;">`;
+    rateCell.innerHTML = `<input type="text" value="NA" disabled style="width:60px;">`;
+
+    if (val === "Fee Concession") {
+      fromInput.value = "";
+      toInput.value = "";
+      fromInput.disabled = true;
+      toInput.disabled = true;
+      subjectCell.innerHTML = `
+        <select>
+          <option>NA</option>
+          <option>Qlfd. Scholarship</option>
+        </select>
+      `;
+      totalCell.innerHTML = `<input type="number" step="0.01" value="0.00" class="total-input" style="text-align:center;" oninput="calculateTotal()">`;
+    } 
+    else {  // 🔹 Prev. balance
+      fromInput.disabled = false;
+      toInput.disabled = false;
+
+      const studentName = document.getElementById("studentName").value.trim();
+      let lastInvoiceNo = null;
+      let lastDueBalance = null;
+
+      if (studentName) {
+        const invoices = JSON.parse(localStorage.getItem("invoices") || "{}");
+        let latestDate = null;
+
+        Object.entries(invoices).forEach(([invNo, inv]) => {
+          if (inv.name === studentName && invNo !== document.getElementById("invoiceNo").textContent) {
+            const invDate = new Date(inv.date);
+            if (!latestDate || invDate > latestDate) {
+              latestDate = invDate;
+              lastInvoiceNo = invNo;
+              lastDueBalance = parseFloat(inv.balance || 0); // 🔹 fetch last balance
+            }
+          }
+        });
+      }
+
+      if (lastInvoiceNo) {
+        subjectCell.innerHTML = `<input type="text" value="${lastInvoiceNo}" style="width:120px;">`;
+        totalCell.innerHTML = `<input type="number" step="0.01" value="${lastDueBalance.toFixed(2)}" class="total-input" style="text-align:center;" oninput="calculateTotal()">`;
+      } else {
+        subjectCell.innerHTML = `<input type="text" placeholder="Enter Invoice No." style="width:120px;">`;
+        totalCell.innerHTML = `<input type="number" step="0.01" value="0.00" class="total-input" style="text-align:center;" oninput="calculateTotal()">`;
+      }
+    }
+  }
+  else if (val === "Study Material") {
+    qtyCell.innerHTML = `<input type="text" value="1 Qnty" style="width:60px;" oninput="calculateTotal()">`;
+    rateCell.innerHTML = `<input type="number" value="0" min="0" class="rate" style="width:60px;" oninput="calculateTotal()">`;
+    fromInput.disabled = false;
+    toInput.disabled = false;
+    if (!fromInput.value) fromInput.value = invoiceDateInput.value || '';
+    totalCell.innerHTML = `0.00`;
+    subjectCell.innerHTML = `
+      <select>
+        <option>Physics</option>
+        <option>Chemistry</option>
+        <option>Math</option>
+        <option>Biology</option>
+        <option>Science</option>
+        <option>NA</option>
+      </select>
+    `;
+  }
+  else if (["Individual Coaching", "Home Tuition", "Dual Coaching", "Demo Class Reg. Fee"].includes(val)) {
+    qtyCell.innerHTML = `<input type="text" value="8 Class" style="width:60px;" oninput="calculateTotal()">`;
+    rateCell.innerHTML = `<input type="number" value="1000" min="0" class="rate" style="width:60px;" oninput="calculateTotal()">`;
+    fromInput.disabled = false;
+    toInput.disabled = false;
+    if (!fromInput.value) fromInput.value = invoiceDateInput.value || '';
+    totalCell.innerHTML = (8 * 1000).toFixed(2);
+    subjectCell.innerHTML = `
+      <select>
+        <option>Physics</option>
+        <option>Chemistry</option>
+        <option>Math</option>
+        <option>Biology</option>
+        <option>Science</option>
+        <option>NA</option>
+      </select>
+    `;
+  }
+  else if (["Group Coaching", "Super Group Coaching"].includes(val)) {
+    qtyCell.innerHTML = `<input type="text" value="1 Month" style="width:60px;" oninput="calculateTotal()">`;
+    rateCell.innerHTML = `<input type="number" value="0" min="0" class="rate" style="width:60px;" oninput="calculateTotal()">`;
+    fromInput.disabled = false;
+    toInput.disabled = false;
+    if (!fromInput.value) fromInput.value = invoiceDateInput.value || '';
+    totalCell.innerHTML = "0.00";
+    subjectCell.innerHTML = `
+      <select>
+        <option>Physics</option>
+        <option>Chemistry</option>
+        <option>Math</option>
+        <option>Biology</option>
+        <option>Science</option>
+        <option>NA</option>
+      </select>
+    `;
+  }
+  else {
+    const qtyVal = (qtyCell.querySelector("input") && !qtyCell.querySelector("input").disabled) ? qtyCell.querySelector("input").value : 1;
+    const rateVal = (rateCell.querySelector("input") && !rateCell.querySelector("input").disabled) ? rateCell.querySelector("input").value : 0;
+    qtyCell.innerHTML = `<input type="number" value="${escapeHTML(qtyVal || 0)}" min="0" style="width:60px;" oninput="calculateTotal()">`;
+    rateCell.innerHTML = `<input type="number" value="${escapeHTML(rateVal || 0)}" min="0" class="rate" style="width:60px;" oninput="calculateTotal()">`;
+    fromInput.disabled = false;
+    toInput.disabled = false;
+    if (!fromInput.value) fromInput.value = invoiceDateInput.value || '';
+    const qtyNum = parseFloat(qtyVal) || 0;
+    const rateNum = parseFloat(rateVal) || 0;
+    totalCell.innerHTML = (qtyNum * rateNum).toFixed(2);
+    subjectCell.innerHTML = `
+      <select>
+        <option>Physics</option>
+        <option>Chemistry</option>
+        <option>Math</option>
+        <option>Biology</option>
+        <option>Science</option>
+        <option>NA</option>
+      </select>
+    `;
+  }
+
+  calculateTotal();
+}
+
+
+
+    // ---------- calculations & QR ----------
+function calculateTotal() {
+  let grandTotal = 0;
+
+  document.querySelectorAll("#billBody tr").forEach(row => {
+    const serviceType = (row.children[2].querySelector("select")?.value) || "";
+
+    if (serviceType === "Prev. balance" || serviceType === "Fee Concession") {
+      const totalInput = row.children[6].querySelector("input");
+      const totalVal = parseFloat(totalInput ? totalInput.value : (row.children[6].textContent || 0)) || 0;
+      grandTotal += totalVal;
+    } else {
+      const qtyInput = row.children[4].querySelector("input");
+      const rateInput = row.children[5].querySelector("input");
+      const totalCell = row.children[6];
+
+      const qty = qtyInput ? (parseFloat(qtyInput.value) || 0) : (parseFloat(row.children[4].textContent) || 0);
+      const rate = rateInput ? (parseFloat(rateInput.value) || 0) : (parseFloat(row.children[5].textContent) || 0);
+      const total = qty * rate;
+
+      grandTotal += total;
+
+      // Update total cell
+      if (totalCell.querySelector("input")) {
+        totalCell.querySelector("input").value = total.toFixed(2);
+      } else {
+        totalCell.textContent = total.toFixed(2);
+      }
+    }
+  });
+
+  // Display grand total
+  document.getElementById("grandTotal").textContent = "Total Amount: ₹" + grandTotal.toFixed(2);
+
+  // Amount in words
+  document.getElementById("amountInWords").textContent = "Total (in words): " + numberToWords(grandTotal) + " Only";
+
+  // Due balance
+  const paid = parseFloat(document.getElementById("amountPaid").value) || 0;
+  const due = grandTotal - paid;
+  document.getElementById("dueBalance").textContent = "Due Balance: ₹" + due.toFixed(2);
+
+  // Update QR code
+  document.getElementById("qrCanvas").innerHTML = "";
+  new QRCode(document.getElementById("qrCanvas"), {
+    text: `upi://pay?pa=9706380357@upi&pn=G10%20Educational%20Platform&am=${due.toFixed(2)}&cu=INR`,
+    width: 120,
+    height: 120
+  });
+}
+
+// Helper function: Convert number to words
+function numberToWords(num) {
+  const a = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten",
+             "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen",
+             "Seventeen", "Eighteen", "Nineteen"];
+  const b = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+
+  if ((num = num.toString()).length > 9) return "Overflow";
+  const n = ("000000000" + num).substr(-9).match(/.{1,2}/g).map(x => parseInt(x, 10));
+
+  let str = "";
+  str += (n[0] ? a[n[0]] + " Crore " : "");
+  str += (n[1] ? a[n[1]] + " Lakh " : "");
+  str += (n[2] ? a[n[2]] + " Thousand " : "");
+  str += (n[3] ? a[n[3]] + " Hundred " : "");
+  str += (n[4] ? (str !== "" ? "and " : "") + (a[n[4]] || b[n[4][0]] + " " + a[n[4][1]]) : "");
+  return str.trim() || "Zero";
+}
+
+
+    function updateQRCode(amount) {
+      const upiID = "9706380357@ucobank";
+      const payeeName = "G10 EDUCATIONAL PLATFORM";
+      const amt = (isNaN(amount) ? 0 : Number(amount).toFixed(2));
+      const upiURL = `upi://pay?pa=${upiID}&pn=${encodeURIComponent(payeeName)}&am=${amt}&cu=INR`;
+      const qrCanvas = document.getElementById("qrCanvas");
+      if (qrCanvas) {
+        qrCanvas.innerHTML = "";
+        new QRCode(qrCanvas, {
+          text: upiURL,
+          width: 100,
+          height: 100,
+        });
+      }
+    }
+
+    // ---------- other utilities ----------
+    function checkPassword() {
+      const password = document.getElementById("passwordInput").value;
+      const correctPassword = "7099050509";
+      if (password === correctPassword) {
+        document.getElementById("passwordScreen").style.display = "none";
+        document.getElementById("protectedContent").style.display = "block";
+        populateDropdowns();
+      } else {
+        alert("Incorrect password. Try again.");
+      }
+    }
+
+    function exportToExcel() {
+      const invoices = JSON.parse(localStorage.getItem("invoices") || "{}");
+      if (Object.keys(invoices).length === 0) {
+        alert("No invoices to export.");
+        return;
+      }
+
+      const fromDate = document.getElementById("fromDate").value;
+      const toDate = document.getElementById("toDate").value;
+
+      let data = [];
+      let styles = {};
+      let grandTotal = 0, grandPaid = 0, grandDue = 0;
+
+      data.push([
+        "Invoice No", "Date", "Student Name", "Class", "Phone", "Email", "Address",
+        "Invoice Total", "Amount Paid", "Due Balance"
+      ]);
+
+      const studentMap = {};
+      Object.entries(invoices).forEach(([invoiceNo, invoice]) => {
+        if (fromDate && new Date(invoice.date) < new Date(fromDate)) return;
+        if (toDate && new Date(invoice.date) > new Date(toDate)) return;
+
+        if (!studentMap[invoice.name]) studentMap[invoice.name] = [];
+        studentMap[invoice.name].push({ invoiceNo, invoice });
+      });
+
+      if (Object.keys(studentMap).length === 0) {
+        alert("No invoices found in this date range.");
+        return;
+      }
+
+      Object.entries(studentMap).forEach(([studentName, studentInvoices]) => {
+        let studentTotal = 0, studentPaid = 0, studentDue = 0;
+
+        studentInvoices.forEach(({ invoiceNo, invoice }) => {
+          const rowTotals = invoice.rows.map(row =>
+            row.total !== undefined
+              ? parseFloat(row.total) || 0
+              : ((parseFloat(row.qty) || 0) * (parseFloat(row.rate) || 0))
+          );
+          const invoiceTotal = rowTotals.reduce((a, b) => a + b, 0);
+
+          const paidTotal = parseFloat(invoice.amountPaid) || 0;
+          const dueTotal = invoiceTotal - paidTotal;
+
+          data.push([
+            invoiceNo,
+            invoice.date,
+            invoice.name,
+            invoice.class,
+            invoice.phone,
+            invoice.email,
+            invoice.address,
+            invoiceTotal,
+            paidTotal,
+            dueTotal
+          ]);
+
+          studentTotal += invoiceTotal;
+          studentPaid += paidTotal;
+          studentDue += dueTotal;
+
+          grandTotal += invoiceTotal;
+          grandPaid += paidTotal;
+          grandDue += dueTotal;
+        });
+
+        const totalRowIndex = data.length;
+        data.push(["", "", "=== " + studentName + " TOTAL ===", "", "", "", "",
+          studentTotal, studentPaid, studentDue]);
+        styles[totalRowIndex] = "student";
+        data.push([]);
+      });
+
+      const grandRowIndex = data.length + 1;
+      data.push([]);
+      data.push(["", "", ">>> GRAND TOTAL <<<", "", "", "", "",
+        grandTotal, grandPaid, grandDue]);
+      styles[grandRowIndex] = "grand";
+
+      const ws = XLSX.utils.aoa_to_sheet(data);
+
+      Object.keys(ws).forEach(cell => {
+        if (cell[0] === "!") return;
+        const row = parseInt(cell.match(/\d+/)[0]) - 1;
+        if (styles[row] === "student") {
+          ws[cell].s = {
+            font: { bold: true },
+            fill: { fgColor: { rgb: "FFF9C4" } }
+          };
+        }
+        if (styles[row] === "grand") {
+          ws[cell].s = {
+            font: { bold: true },
+            fill: { fgColor: { rgb: "C8E6C9" } }
+          };
+        }
+      });
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Invoices");
+      XLSX.writeFile(wb, "Invoices.xlsx");
+    }
+
+    function newInvoice() {
+      document.getElementById("invoiceNo").textContent = "";
+      document.getElementById("studentName").value = "";
+      document.getElementById("phone").value = "";
+      document.getElementById("email").value = "";
+      document.getElementById("address").value = "";
+      document.getElementById("studentClass").value = "Class 9";
+      document.getElementById("amountPaid").value = "";
+      document.getElementById("billBody").innerHTML = "";
+      // ensure invoiceSelect cleared too
+      const invoiceSelect = document.getElementById("invoiceSelect");
+      if (invoiceSelect) invoiceSelect.value = "";
+      addItem();
+      calculateTotal();
+      if (invoiceDateInput) invoiceDateInput.valueAsDate = new Date();
+      document.getElementById("printBtn").style.display = "none";
+    }
+
+    // ---------- initial load ----------
+    // populateDropdowns is safe to call now (page loaded)
+    populateDropdowns();
+    updateQRCode(0);
+  </script>
+</body>
+</html>

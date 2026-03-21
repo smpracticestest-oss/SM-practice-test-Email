@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>G10 — School Fee Payment</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#f4f7fb; color:#111; padding:18px; }
+    .card { background:white; border-radius:8px; padding:18px; box-shadow:0 8px 30px rgba(0,0,0,0.06); max-width:920px; margin:14px auto; }
+    input, select, button { font-size:15px; padding:8px; margin:6px 0; width:100%; box-sizing:border-box; border-radius:6px; border:1px solid #ddd; }
+    .row { display:flex; gap:12px; }
+    .col { flex:1; }
+    .small { font-size:13px; color:#444; }
+    .months { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+    .months label { padding:8px 12px; background:#eef3ff; border-radius:6px; cursor:pointer; display:flex; align-items:center; gap:8px; }
+    .actions { margin-top:12px; display:flex; gap:8px; }
+    .history { margin-top:18px; }
+    table { width:100%; border-collapse:collapse; }
+    th,td{ text-align:left; padding:8px; border-bottom:1px solid #eee; font-size:14px; }
+    .muted { color:#666; font-size:13px; }
+    .btn-green { background:#2b8a3e; color:white; border:none; padding:10px 14px; border-radius:6px; cursor:pointer; }
+    .btn-blue { background:#1a73e8; color:white; border:none; padding:10px 14px; border-radius:6px; cursor:pointer; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h2>G10 — Student Fee Portal</h2>
+  <div class="small">Login with Student ID and Password (or DOB)</div>
+
+  <div class="row" style="margin-top:12px;">
+    <div class="col">
+      <input id="studentId" placeholder="Student ID (eg: S101)">
+    </div>
+    <div class="col">
+      <input id="password" placeholder="Password / DOB (eg: 2008-01-15)">
+    </div>
+    <div style="width:140px;">
+      <button id="btnFetch" class="btn-blue">Fetch</button>
+    </div>
+  </div>
+
+  <div id="studentPane" style="display:none; margin-top:18px;">
+    <h3 id="studentName"></h3>
+    <div class="muted" id="studentMeta"></div>
+
+    <div style="margin-top:12px;">
+      <label>Choose months to pay</label>
+      <div class="months" id="monthsList"></div>
+    </div>
+
+    <div style="margin-top:12px;">
+      <label>Monthly fee</label>
+      <div id="monthlyFee" class="muted"></div>
+    </div>
+
+    <div style="margin-top:8px;">
+      <label>Total</label>
+      <div id="totalAmount" style="font-weight:700; font-size:18px;">₹0</div>
+    </div>
+
+    <div class="actions">
+      <button id="btnPay" class="btn-blue">Open Payment Link</button>
+      <button id="btnMarkPaid" class="btn-green">Mark as Paid</button>
+    </div>
+
+    <div style="margin-top:10px;">
+      <label>Payment link to use (optional — overrides defaults)</label>
+      <input id="customPaymentLink" placeholder="https://yourpaymentlink.com/pay?...">
+    </div>
+
+    <div class="history">
+      <h4>Payment history</h4>
+      <div id="historyTable"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------------- CONFIG ---------------- */
+/* Replace this with your deployed Render service URL (no trailing slash), e.g.:
+   const API_BASE_URL = "https://g10-fees.onrender.com";
+*/
+const API_BASE_URL = "REPLACE_WITH_YOUR_RENDER_URL";
+
+/* Default class-level payment links (optional) */
+const paymentLinksByClass = {
+  "9": "",
+  "10": ""
+};
+
+const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+/* ---------------- UI & Logic ---------------- */
+const $ = id => document.getElementById(id);
+let currentStudent = null;
+let selectedMonths = new Set();
+
+function createMonthsUI() {
+  const wrap = $("monthsList");
+  wrap.innerHTML = "";
+  MONTH_NAMES.forEach((m, idx) => {
+    const id = "m"+idx;
+    const lab = document.createElement("label");
+    lab.innerHTML = `<input type="checkbox" id="${id}" value="${m}" style="margin-right:6px;"> ${m}`;
+    wrap.appendChild(lab);
+    wrap.querySelector("#"+id).addEventListener("change", e => {
+      if (e.target.checked) selectedMonths.add(m);
+      else selectedMonths.delete(m);
+      updateTotal();
+    });
+  });
+}
+createMonthsUI();
+
+$("btnFetch").addEventListener("click", async () => {
+  const sid = $("studentId").value.trim();
+  const pwd = $("password").value.trim();
+  if (!sid) return alert("Enter Student ID");
+  try {
+    const res = await fetch(API_BASE_URL + "/api/login", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ studentId: sid, password: pwd })
+    });
+    const j = await res.json();
+    if (!j.found) return alert(j.message || "Student not found / invalid password");
+    currentStudent = j.student;
+    $("studentPane").style.display = "block";
+    $("studentName").innerText = currentStudent.Name;
+    $("studentMeta").innerText = `ID: ${currentStudent.StudentID} • Class: ${currentStudent.Class}`;
+    $("monthlyFee").innerText = "₹" + (currentStudent.MonthlyFee || "0");
+    selectedMonths.clear();
+    MONTH_NAMES.forEach((m,i) => document.getElementById("m"+i).checked = false);
+    $("customPaymentLink").value = currentStudent.PaymentLink || "";
+    updateTotal();
+    fetchHistory(currentStudent.StudentID);
+  } catch (err) {
+    console.error(err);
+    alert("Error fetching student: " + err);
+  }
+});
+
+function updateTotal() {
+  const fee = Number(currentStudent ? currentStudent.MonthlyFee : 0) || 0;
+  const total = fee * selectedMonths.size;
+  $("totalAmount").innerText = "₹" + total;
+}
+
+function choosePaymentLink() {
+  const custom = $("customPaymentLink").value.trim();
+  if (custom) return custom;
+  if (currentStudent && currentStudent.PaymentLink) return currentStudent.PaymentLink;
+  if (currentStudent && paymentLinksByClass[currentStudent.Class]) return paymentLinksByClass[currentStudent.Class];
+  return "";
+}
+
+$("btnPay").addEventListener("click", () => {
+  if (!currentStudent) { alert("Fetch a student first"); return; }
+  if (selectedMonths.size === 0) { alert("Select at least one month"); return; }
+  const amount = Number(currentStudent.MonthlyFee || 0) * selectedMonths.size;
+  const link = choosePaymentLink();
+  if (!link) {
+    if (!confirm("No payment link configured. Open a blank tab for manual payment?")) return;
+    window.open("about:blank", "_blank");
+    return;
+  }
+  try {
+    const url = new URL(link);
+    url.searchParams.set("amount", amount);
+    url.searchParams.set("studentId", currentStudent.StudentID);
+    url.searchParams.set("name", currentStudent.Name);
+    window.open(url.toString(), "_blank");
+  } catch (e) {
+    // link might be not fully qualified. Fallback: append query params manually
+    const sep = link.indexOf("?") === -1 ? "?" : "&";
+    const final = link + sep + "amount=" + encodeURIComponent(amount) + "&studentId=" + encodeURIComponent(currentStudent.StudentID) + "&name=" + encodeURIComponent(currentStudent.Name);
+    window.open(final, "_blank");
+  }
+});
+
+$("btnMarkPaid").addEventListener("click", async () => {
+  if (!currentStudent) { alert("Fetch a student first"); return; }
+  if (selectedMonths.size === 0) { alert("Select at least one month"); return; }
+  const months = Array.from(selectedMonths);
+  const amount = Number(currentStudent.MonthlyFee || 0) * months.length;
+  const payload = {
+    studentId: currentStudent.StudentID,
+    name: currentStudent.Name,
+    class: currentStudent.Class,
+    months,
+    amount,
+    paymentLink: choosePaymentLink(),
+    notes: "Marked paid via portal"
+  };
+  try {
+    const res = await fetch(API_BASE_URL + "/api/recordPayment", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify(payload)
+    });
+    const j = await res.json();
+    if (j.success) {
+      alert("Payment recorded. Admin should verify.");
+      fetchHistory(currentStudent.StudentID);
+      selectedMonths.clear();
+      MONTH_NAMES.forEach((m,i) => document.getElementById("m"+i).checked = false);
+      updateTotal();
+    } else {
+      alert("Error recording payment: " + (j.error || JSON.stringify(j)));
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Error: " + err);
+  }
+});
+
+async function fetchHistory(studentId) {
+  try {
+    const res = await fetch(API_BASE_URL + "/api/payments/" + encodeURIComponent(studentId));
+    const arr = await res.json();
+    renderHistory(arr);
+  } catch (err) {
+    console.error(err);
+    $("historyTable").innerHTML = "<div class='muted'>Could not load history</div>";
+  }
+}
+
+function renderHistory(arr) {
+  if (!arr || arr.length === 0) { $("historyTable").innerHTML = "<div class='muted'>No payments yet.</div>"; return; }
+  let html = "<table><thead><tr><th>Date</th><th>Months</th><th>Amount</th><th>Link</th><th>Notes</th></tr></thead><tbody>";
+  arr.slice().reverse().forEach(r => {
+    const ts = r.timestamp ? new Date(r.timestamp).toLocaleString() : "";
+    html += `<tr>
+      <td>${ts}</td>
+      <td>${(r.months || []).join(", ")}</td>
+      <td>₹${r.amount||""}</td>
+      <td class="muted">${r.paymentLink||""}</td>
+      <td class="muted">${r.notes||""}</td>
+    </tr>`;
+  });
+  html += "</tbody></table>";
+  $("historyTable").innerHTML = html;
+}
+</script>
+
+</body>
+</html>
