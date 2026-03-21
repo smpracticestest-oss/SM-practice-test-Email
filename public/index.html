@@ -104,10 +104,7 @@ window.addEventListener("popstate", function () {
   history.pushState(null, null, location.href);
 });
 
-/* auto refresh */
-setTimeout(() => {
-  location.reload();
-}, 1 * 60 * 1000);
+
 
 let alreadyUsed = false;
 
@@ -190,13 +187,17 @@ function getEmail(category){
       document.getElementById("message").innerText =
         "You have permission for only one registered email.";
 
-      // 🔒 Disable ALL subject buttons
+      // 🔒 Disable ALL buttons
       document.querySelectorAll(".sub-btn").forEach(b=>b.disabled=true);
-
-      // 🔒 Disable ALL class buttons
       classButtons.forEach(b=>b.disabled=true);
 
       alreadyUsed = true;
+
+      // ⏱ START TIMER AFTER EMAIL
+      setTimeout(() => {
+        alert("Session expired");
+        location.reload();
+      }, 5 * 60 * 1000);
     })
     .catch(()=>{
       document.getElementById("message").innerText = "Server error";
