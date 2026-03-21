@@ -197,7 +197,7 @@ function getEmail(category){
       setTimeout(() => {
         alert("Session expired");
         location.reload();
-      }, 5 * 60 * 1000);
+      }, 1 * 60 * 1000);
     })
     .catch(()=>{
       document.getElementById("message").innerText = "Server error";
