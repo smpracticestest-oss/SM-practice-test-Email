@@ -97,12 +97,17 @@ h2{
 <p id="message"></p>
 
 <script>
-let alreadyUsed = false;
-/* 🔒 BLOCK BACK BUTTON */
+/* 🔒 HARD BLOCK BACK BUTTON */
+
+// push multiple states
 history.pushState(null, null, location.href);
-window.onpopstate = function () {
-  history.go(1);
-};
+history.pushState(null, null, location.href);
+history.pushState(null, null, location.href);
+
+// force forward on back
+window.addEventListener("popstate", function () {
+  history.pushState(null, null, location.href);
+});
 
 
 const classButtons = document.querySelectorAll(".class-btn");
