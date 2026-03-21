@@ -74,11 +74,7 @@ h2{
   margin-top:10px;
 }
 </style>
-  setTimeout(() => {
-  location.reload();
-}, 5 * 60 * 1000); // 5 minutes
 </head>
-
 <body>
 
 <h2>Email Access Portal</h2>
@@ -94,26 +90,25 @@ h2{
 </div>
 
 
-
-<script>
-
-<!-- SUBJECT BUTTONS -->
 <div id="subjects" class="sub-grid"></div>
-
 <p id="email"></p>
 <p id="message"></p>
-  
-/* 🔒 HARD BLOCK BACK BUTTON */
 
-// push multiple states
+<script>
+/* back button block */
 history.pushState(null, null, location.href);
 history.pushState(null, null, location.href);
 history.pushState(null, null, location.href);
 
-// force forward on back
 window.addEventListener("popstate", function () {
   history.pushState(null, null, location.href);
 });
+
+/* auto refresh */
+setTimeout(() => {
+  location.reload();
+}, 1 * 60 * 1000);
+
 let alreadyUsed = false;
 
 const classButtons = document.querySelectorAll(".class-btn");
