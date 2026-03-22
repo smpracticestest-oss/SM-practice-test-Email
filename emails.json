@@ -1,8 +1,26 @@
 {
-  "class9_science_practice": [
-    { "email": "c9_sci_pt1@gmail.com", "used": false },
-    { "email": "c9_sci_pt2@gmail.com", "used": false }
-  ],
+  "class10_science_practice": [
+  { "email": "c10_sci_pt_G10EP1101@gmail.com", "used": false },
+  { "email": "c10_sci_pt_G10EP1102@gmail.com", "used": false },
+  { "email": "c10_sci_pt_G10EP1103@gmail.com", "used": false },
+  { "email": "c10_sci_pt_G10EP1104@gmail.com", "used": false },
+  { "email": "c10_sci_pt_G10EP1105@gmail.com", "used": false },
+  { "email": "c10_sci_pt_G10EP1106@gmail.com", "used": false },
+  { "email": "c10_sci_pt_G10EP1107@gmail.com", "used": false },
+  { "email": "c10_sci_pt_G10EP1108@gmail.com", "used": false },
+  { "email": "c10_sci_pt_G10EP1109@gmail.com", "used": false },
+  { "email": "c10_sci_pt_G10EP1110@gmail.com", "used": false },
+  { "email": "c10_sci_pt_G10EP1111@gmail.com", "used": false },
+  { "email": "c10_sci_pt_G10EP1112@gmail.com", "used": false },
+  { "email": "c10_sci_pt_G10EP1113@gmail.com", "used": false },
+  { "email": "c10_sci_pt_G10EP1114@gmail.com", "used": false },
+  { "email": "c10_sci_pt_G10EP1115@gmail.com", "used": false },
+  { "email": "c10_sci_pt_G10EP1116@gmail.com", "used": false },
+  { "email": "c10_sci_pt_G10EP1117@gmail.com", "used": false },
+  { "email": "c10_sci_pt_G10EP1118@gmail.com", "used": false },
+  { "email": "c10_sci_pt_G10EP1119@gmail.com", "used": false },
+  { "email": "c10_sci_pt_G10EP1120@gmail.com", "used": false }
+],
   "class9_science_study": [
     { "email": "c9_sci_sm1@gmail.com", "used": false },
     { "email": "c9_sci_sm2@gmail.com", "used": false }
