@@ -190,7 +190,7 @@ function getEmail(category){
       document.getElementById("message").innerText =
   "⚠️ You have permission for only one registered email.\n\n" +
   "📌 Copy or note the password (email) immediately.\n" +
-  "⏳ After 2 minutes, self-destruction mode will activate and the password will disappear.\n" +
+  "⏳ After 5 minutes, self-destruction mode will activate and the password will disappear.\n" +
   "📅 This password remains valid for 366 days (1 year).";
 
       // 🔒 Disable ALL buttons
@@ -203,7 +203,7 @@ function getEmail(category){
       setTimeout(() => {
         alert("Session expired");
         location.reload();
-      }, 1 * 60 * 1000);
+      }, 5 * 60 * 1000);
     })
     .catch(()=>{
       document.getElementById("message").innerText = "Server error";
