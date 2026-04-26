@@ -542,7 +542,7 @@
 ],
 
  "iitjee_physics_practice": [
-  { "email": "jee_phy_smpt_G10EP5826@gmail.com", "used": false },
+ 
   { "email": "jee_phy_smpt_G10EP7341@gmail.com", "used": false },
   { "email": "jee_phy_smpt_G10EP1689@gmail.com", "used": false },
   { "email": "jee_phy_smpt_G10EP9017@gmail.com", "used": false },
@@ -564,7 +564,7 @@
   { "email": "jee_phy_smpt_G10EP5956@gmail.com", "used": false }
 ],
   "iitjee_physics_study": [
-  { "email": "jee_phy_sm_G10EP5835@gmail.com", "used": false },
+  
   { "email": "jee_phy_sm_G10EP7392@gmail.com", "used": false },
   { "email": "jee_phy_sm_G10EP1624@gmail.com", "used": false },
   { "email": "jee_phy_sm_G10EP9079@gmail.com", "used": false },
@@ -586,7 +586,7 @@
   { "email": "jee_phy_sm_G10EP5914@gmail.com", "used": false }
 ],
  "iitjee_chemistry_practice": [
-  { "email": "jee_chem_smpt_G10EP5814@gmail.com", "used": false },
+
   { "email": "jee_chem_smpt_G10EP7367@gmail.com", "used": false },
   { "email": "jee_chem_smpt_G10EP1692@gmail.com", "used": false },
   { "email": "jee_chem_smpt_G10EP9035@gmail.com", "used": false },
@@ -608,7 +608,7 @@
   { "email": "jee_chem_smpt_G10EP5961@gmail.com", "used": false }
 ],
  "iitjee_chemistry_study": [
-  { "email": "jee_chem_sm_G10EP5841@gmail.com", "used": false },
+ 
   { "email": "jee_chem_sm_G10EP7326@gmail.com", "used": false },
   { "email": "jee_chem_sm_G10EP1675@gmail.com", "used": false },
   { "email": "jee_chem_sm_G10EP9058@gmail.com", "used": false },
