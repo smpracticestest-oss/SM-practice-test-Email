@@ -39,7 +39,7 @@ app.get("/after-payment", (req, res) => {
 
   validTokens.set(token, Date.now());
 
-  res.redirect(`/?token=${token}`);
+  res.redirect(`https://email-password-complete-package.onrender.com/?token=${token}`);
 });
 
 /* ==============================
@@ -84,7 +84,7 @@ app.get("/email", (req, res) => {
     const lastTime = issuedUsers.get(userKey);
     if (now - lastTime < lockTime) {
       return res.status(403).json({
-        message: "You are paid for only one registered email."
+        message: "You are permitted only one registered email.\n\nYou have already received your email.\n\nTo obtain another, please wait 15 minutes and make a new payment."
       });
     }
   }
