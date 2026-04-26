@@ -248,6 +248,11 @@ h2{
 
 
 
+<!-- SUBJECT BUTTONS -->
+
+<div id="timerBox">
+  ⏳ Time Left: <span id="timer">05:00</span>
+</div>
 
 
 <script>
@@ -306,10 +311,6 @@ const data = {
   ]
 };
 
-
-
-
-
 function showClass(cls){
   if(alreadyUsed) return;
 
@@ -343,7 +344,7 @@ function showClass(cls){
 function getEmail(category){
   if(alreadyUsed) return;
 
-  fetch(`https://sm-practice-test-email.onrender.com/email?category=${category}`)
+   fetch(`https://sm-practice-test-email.onrender.com/email?category=${category}`)
     .then(r=>r.json())
     .then(d=>{
 	
@@ -354,7 +355,7 @@ document.getElementById("email").innerText = emailText;
 document.getElementById("copyBtn").style.display = "inline-block";
 	  
     document.getElementById("message").innerHTML =
-  "⚠️ You have permission for only one registered email. If you want another email, kindly try again after 15 minutes.<br><br>" +
+  "⚠️ You have permission for only one registered email.<br><br>" +
   "📌 Copy or note the password (email) immediately.<br>" +
   "⏳ After 5 minutes, self-destruction mode will activate and the password will disappear.<br>" +
   "📅 This password remains valid for 366 days (1 year).<br><br>" +
