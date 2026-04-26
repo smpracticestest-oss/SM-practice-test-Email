@@ -119,7 +119,66 @@ h2{
 
 
 
+#timerBox{
+  text-align:center;
+  font-size:40px;
+  font-weight:bold;
+  color:#e74c3c;
+  margin:20px 0;
+  display:none;
+}
 
+#timer{
+  font-size:60px;
+  color:#c0392b;
+  background:#fff;
+  padding:10px 20px;
+  border-radius:10px;
+  box-shadow:0 0 10px rgba(0,0,0,0.2);
+}
+
+
+#emailBox{
+  background:#ffffff;
+  border:2px solid #27ae60;
+  border-radius:10px;
+  padding:20px;
+  text-align:center;
+  box-shadow:0 4px 12px rgba(0,0,0,0.15);
+  margin-top:20px;
+}
+
+.email-title{
+  font-size:18px;
+  font-weight:bold;
+  margin-bottom:10px;
+  color:#2c3e50;
+}
+
+.email-content{
+  font-size:20px;
+  font-weight:bold;
+  color:#27ae60;
+  background:#ecf9f1;
+  padding:10px;
+  border-radius:6px;
+  word-break:break-all;
+}
+
+#copyBtn{
+  margin-top:15px;
+  background:#2980b9;
+  color:white;
+  border:none;
+  padding:10px 15px;
+  border-radius:6px;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+#copyBtn:hover{
+  background:#3498db;
+}
 
 
 
@@ -153,7 +212,15 @@ h2{
     <!-- SUBJECT BUTTONS -->
     <div id="subjects" class="sub-grid"></div>
 
-    <p id="email"></p>
+    <div id="emailBox">
+  <div class="email-title">📧 Your Registered Email</div>
+
+  <div class="email-content" id="email">Click a class to generate email</div>
+
+  <button id="copyBtn" onclick="copyEmail()" style="display:none;">
+    📋 Copy Email
+  </button>
+</div>
     <p id="message"></p>
 
   </div>
@@ -181,11 +248,7 @@ h2{
 
 
 
-<!-- SUBJECT BUTTONS -->
-<div id="subjects" class="sub-grid"></div>
 
-<p id="email"></p>
-<p id="message"></p>
 
 <script>
 let alreadyUsed = false;
@@ -243,6 +306,10 @@ const data = {
   ]
 };
 
+
+
+
+
 function showClass(cls){
   if(alreadyUsed) return;
 
@@ -259,19 +326,39 @@ function showClass(cls){
   });
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function getEmail(category){
   if(alreadyUsed) return;
 
   fetch(`https://sm-practice-test-email.onrender.com/email?category=${category}`)
     .then(r=>r.json())
     .then(d=>{
-      document.getElementById("email").innerText = d.email || d.message;
+	
+      const emailText = d.email || d.message;
+document.getElementById("email").innerText = emailText;
+
+// show copy button
+document.getElementById("copyBtn").style.display = "inline-block";
+	  
     document.getElementById("message").innerHTML =
-  "⚠️ You have permission for only one registered email.<br><br>" +
+  "⚠️ You have permission for only one registered email. If you want another email, kindly try again after 15 minutes.<br><br>" +
   "📌 Copy or note the password (email) immediately.<br>" +
   "⏳ After 5 minutes, self-destruction mode will activate and the password will disappear.<br>" +
   "📅 This password remains valid for 366 days (1 year).<br><br>" +
-  "<span style='color:blue; font-weight:bold;'>🔑 This email is your registered ID to open the practice test for your respective class.</span>";
+  "<span style='color:blue; font-weight:bold;'>🔑 This email is your registered ID to open the practice test and Study materials for your respective class.</span>";
 
       // 🔒 Disable ALL buttons
       document.querySelectorAll(".sub-btn").forEach(b=>b.disabled=true);
@@ -300,14 +387,13 @@ document.getElementById("rightPanel").style.display = "flex";
 	  
 
       // ⏱ START TIMER AFTER EMAIL
-      setTimeout(() => {
-        alert("Session expired");
-        location.reload();
-      }, 5 * 60 * 1000);
+   // ✅ START 5 MIN TIMER
+startTimer(300);
     })
     .catch(()=>{
       document.getElementById("message").innerText = "Server error";
     });
+	
 }
 
 
@@ -345,7 +431,45 @@ function goHome(){
 
 
 
+let timerInterval;
 
+function startTimer(duration){
+  let time = duration;
+
+  document.getElementById("timerBox").style.display = "block";
+
+  timerInterval = setInterval(()=>{
+    let minutes = Math.floor(time / 60);
+    let seconds = time % 60;
+
+    seconds = seconds < 10 ? "0" + seconds : seconds;
+
+    document.getElementById("timer").innerText =
+      minutes + ":" + seconds;
+
+    time--;
+
+    if(time < 0){
+      clearInterval(timerInterval);
+      document.getElementById("timer").innerText = "00:00";
+
+      alert("⛔ Time Expired! Session Closed.");
+      location.reload();
+    }
+
+  },1000);
+}
+
+
+
+
+function copyEmail(){
+  const text = document.getElementById("email").innerText;
+
+  navigator.clipboard.writeText(text).then(()=>{
+    alert("✅ Email copied!");
+  });
+}
 
 
 
