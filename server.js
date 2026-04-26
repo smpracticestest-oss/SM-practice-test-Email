@@ -39,7 +39,7 @@ app.get("/after-payment", (req, res) => {
 
   validTokens.set(token, Date.now());
 
-  res.redirect(`https://email-password-complete-package.onrender.com/?token=${token}`);
+  res.redirect(`https://sm-practice-test-email.onrender.com/?token=${token}`);
 });
 
 /* ==============================
